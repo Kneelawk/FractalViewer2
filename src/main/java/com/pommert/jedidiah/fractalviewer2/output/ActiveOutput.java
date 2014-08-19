@@ -3,7 +3,9 @@ package com.pommert.jedidiah.fractalviewer2.output;
 import com.pommert.jedidiah.fractalviewer2.util.Colour;
 
 public abstract class ActiveOutput {
-	public abstract void init(String filename);
+	public abstract void init();
+	
+	public abstract void file(String filename);
 
 	public abstract void run();
 
