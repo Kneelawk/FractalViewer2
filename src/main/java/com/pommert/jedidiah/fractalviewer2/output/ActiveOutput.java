@@ -24,4 +24,8 @@ public abstract class ActiveOutput {
 	protected Colour generatePixel(int x, int y) {
 		return OutputControl.generatePixel(x, y);
 	}
+
+    protected void updateOutput() {
+        OutputControl.update();
+    }
 }
