@@ -1,11 +1,13 @@
 package com.pommert.jedidiah.fractalviewer2.output;
 
+import java.io.File;
+
 import com.pommert.jedidiah.fractalviewer2.util.Colour;
 
 public abstract class ActiveOutput {
 	public abstract void init();
-	
-	public abstract void file(String filename);
+
+	public abstract void setup(File file, int cols, int rows);
 
 	public abstract void run();
 
@@ -25,7 +27,7 @@ public abstract class ActiveOutput {
 		return OutputControl.generatePixel(x, y);
 	}
 
-    protected void updateOutput() {
-        OutputControl.update();
-    }
+	protected void updateOutput() {
+		OutputControl.update();
+	}
 }
