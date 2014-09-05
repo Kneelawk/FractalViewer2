@@ -15,6 +15,7 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
@@ -26,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 
 import com.pommert.jedidiah.fractalviewer2.FractalViewer2;
 import com.pommert.jedidiah.fractalviewer2.fractal.FractalControl;
-import com.pommert.jedidiah.fractalviewer2.ui.custom.JSpring;
 
 public class UIControl {
 
@@ -35,6 +35,8 @@ public class UIControl {
 	public static JFrame frame;
 	public static JComboBox<String> fractalSelector;
 	public static JScrollPane configPanel;
+	public static JProgressBar generation;
+	public static JProgressBar overall;
 
 	public static String[] fractalList;
 
@@ -94,7 +96,19 @@ public class UIControl {
 		JPanel buttonPanel = new JPanel();
 		buttonPanel.setLayout(new BoxLayout(buttonPanel, BoxLayout.X_AXIS));
 		frame.add("South", buttonPanel);
-		buttonPanel.add(new JSpring(10000, 0));
+
+		JPanel progressPanel = new JPanel();
+		progressPanel.setLayout(new BoxLayout(progressPanel, BoxLayout.Y_AXIS));
+		buttonPanel.add(progressPanel);
+		generation = new JProgressBar();
+		progressPanel.add(generation);
+		generation.setString(getGenerationString(0));
+		generation.setStringPainted(true);
+		overall = new JProgressBar();
+		progressPanel.add(overall);
+		overall.setString(getOverallString(0));
+		overall.setStringPainted(true);
+
 		JButton close = new JButton("Close");
 		buttonPanel.add(close);
 		JButton run = new JButton("Run...");
@@ -116,5 +130,13 @@ public class UIControl {
 	public static void show() {
 		log.info("Showing Frame");
 		frame.setVisible(true);
+	}
+
+	public static String getGenerationString(int progress) {
+		return String.format("Fractal Generation: %d%%", progress);
+	}
+
+	public static String getOverallString(int progress) {
+		return String.format("Overall Progress: %d%%", progress);
 	}
 }
