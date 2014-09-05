@@ -75,8 +75,4 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 	public void finish() {
 
 	}
-
-	private static int getText(JTextField field) {
-		return 0;
-	}
 }
