@@ -43,7 +43,7 @@ public class DoubleTextFieldControl {
 	}
 
 	public DoubleTextFieldControl(JTextField field) {
-		this(field, 0);
+		this(field, Double.parseDouble(field.getText()));
 	}
 
 	public DoubleTextFieldControl addTo(Container to) {

@@ -37,21 +37,36 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 		root.setLayout(new GridBagLayout());
 		panel.add(root);
 		GridBagConstraints c = new GridBagConstraints();
+		c.ipadx = 5;
 
 		// generation plane width
 		c.fill = GridBagConstraints.NONE;
 		c.gridx = 0;
 		c.gridy = 0;
-		root.add(new JLabel("Generation Plane Width: "), c);
-		widthField = new DoubleTextFieldControl(new JTextField("5.0", 20));
+		root.add(new JLabel("Generation Plane Width:"), c);
+		widthField = new DoubleTextFieldControl(new JTextField("5.0", 20), 5);
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 1;
 		c.gridy = 0;
 		root.add(widthField.field, c);
 
 		// generation plane height
-		JPanel heightPanel = new JPanel();
-		root.add(heightPanel);
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 0;
+		c.gridy = 1;
+		root.add(new JLabel("Generation Plane Height:"), c);
+		heightField = new DoubleTextFieldControl(new JTextField("5.0", 20), 5);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 1;
+		c.gridy = 1;
+		root.add(heightField.field, c);
+		heightField.field.setEnabled(false);
+		calculateHeight = new JCheckBox("Calculate Height");
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 2;
+		c.gridy = 1;
+		root.add(calculateHeight, c);
+		calculateHeight.setSelected(true);
 	}
 
 	@Override
