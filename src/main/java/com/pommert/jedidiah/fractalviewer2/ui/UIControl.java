@@ -1,6 +1,8 @@
 package com.pommert.jedidiah.fractalviewer2.ui;
 
 import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -17,6 +19,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
+import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
 import javax.swing.border.EtchedBorder;
@@ -33,6 +36,7 @@ public class UIControl {
 	public static Logger log;
 
 	public static JFrame frame;
+	public static JTextField outputField;
 	public static JComboBox<String> fractalSelector;
 	public static JScrollPane configPanel;
 	public static JProgressBar generation;
@@ -76,14 +80,38 @@ public class UIControl {
 		}
 		frame.setIconImage(icon);
 
-		JPanel selectionPanel = new JPanel();
-		selectionPanel
-				.setLayout(new BoxLayout(selectionPanel, BoxLayout.X_AXIS));
-		selectionPanel.add(new JLabel("Fractal selection: ", JLabel.LEFT));
+		JPanel northPanel = new JPanel();
+		northPanel.setLayout(new GridBagLayout());
+		frame.add("North", northPanel);
+		GridBagConstraints c = new GridBagConstraints();
+		c.ipadx = 5;
+
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 0;
+		c.gridy = 0;
+		northPanel.add(new JLabel("Output File:"));
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 1;
+		c.gridy = 0;
+		outputField = new JTextField(30);
+		northPanel.add(outputField);
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 2;
+		c.gridy = 0;
+		JButton selectFile = new JButton("Select...");
+		northPanel.add(selectFile);
+
+		// fractal selection
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 0;
+		c.gridy = 3;
+		northPanel.add(new JLabel("Fractal selection:"), c);
 		fractalList = FractalControl.list();
 		fractalSelector = new JComboBox<String>(fractalList);
-		selectionPanel.add(fractalSelector);
-		frame.add("North", selectionPanel);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 1;
+		c.gridy = 3;
+		northPanel.add(fractalSelector, c);
 
 		configPanel = new JScrollPane();
 		configPanel.setBorder(new TitledBorder(new EtchedBorder(),
