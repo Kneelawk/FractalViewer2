@@ -6,8 +6,6 @@ import java.awt.event.KeyListener;
 
 import javax.swing.JTextField;
 
-import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
-
 public class DoubleTextFieldControl {
 	public JTextField field;
 	public double data;
@@ -35,9 +33,7 @@ public class DoubleTextFieldControl {
 						data = 0;
 					else
 						field.setText(String.valueOf(data));
-
 				}
-				UIControl.log.debug("Input: " + text + ", data: " + data);
 			}
 		});
 	}

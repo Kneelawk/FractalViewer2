@@ -7,6 +7,7 @@ import com.pommert.jedidiah.fractalviewer2.fractal.FractalControl;
 import com.pommert.jedidiah.fractalviewer2.output.OutputControl;
 import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
 import com.pommert.jedidiah.fractalviewer2.ui.opengl.GLControl;
+import com.pommert.jedidiah.fractalviewer2.util.CPControl;
 
 public class FractalViewer2 {
 
@@ -16,6 +17,10 @@ public class FractalViewer2 {
 		// create logger
 		log = LogManager.getLogger("Core");
 		log.info("Starting Fractal Viewer 2!");
+
+		// init ClassPathControl and add natives
+		CPControl.init();
+		CPControl.addNativesDir();
 
 		// init outputs
 		OutputControl.initOutputs();
@@ -33,7 +38,14 @@ public class FractalViewer2 {
 		UIControl.show();
 	}
 
+	public static void start(int width, int height) {
+		GLControl.open(width, height);
+	}
+
 	public static void stop() {
 		log.info("Stopping");
+
+		// close gl
+		GLControl.stop();
 	}
 }
