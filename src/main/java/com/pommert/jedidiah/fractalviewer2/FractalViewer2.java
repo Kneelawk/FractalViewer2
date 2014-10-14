@@ -3,11 +3,11 @@ package com.pommert.jedidiah.fractalviewer2;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.pommert.jedidiah.fractalviewer2.classpath.CPControl;
 import com.pommert.jedidiah.fractalviewer2.fractal.FractalControl;
 import com.pommert.jedidiah.fractalviewer2.output.OutputControl;
 import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
 import com.pommert.jedidiah.fractalviewer2.ui.opengl.GLControl;
-import com.pommert.jedidiah.fractalviewer2.util.CPControl;
 
 public class FractalViewer2 {
 

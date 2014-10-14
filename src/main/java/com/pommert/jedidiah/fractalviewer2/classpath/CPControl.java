@@ -1,4 +1,4 @@
-package com.pommert.jedidiah.fractalviewer2.util;
+package com.pommert.jedidiah.fractalviewer2.classpath;
 
 import java.io.File;
 import java.io.FileNotFoundException;
