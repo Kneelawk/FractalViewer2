@@ -7,6 +7,8 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 
+import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
+
 public class GLControl {
 	public static final int DISPLAY_WIDTH = 640;
 	public static final int DISPLAY_HEIGHT = 480;
@@ -14,29 +16,48 @@ public class GLControl {
 	public static Logger log;
 	public static Thread glThread;
 	public static boolean isOpen;
+	public static boolean hasBeenOpened = false;
 
 	public static int viewX, viewY;
 	public static int imageWidth, imageHeight;
+	public static String displayTitle = "Fractal Viewer";
+	public static boolean shouldClose = false;
 
 	public static void initGL() {
 		log = LogManager.getLogger("GLControl");
 		log.info("Init GL");
 	}
+	
+	public static synchronized void reCreateThread() {
+		glThread = new Thread(new Runnable() {
+			public void run() {
+				startGL();
+			}
+		}, "GL Render Thread");
+	}
 
-	public static synchronized void open(int width, int height) {
+	public static synchronized void open(String title, int width, int height) {
+		imageWidth = width;
+		imageHeight = height;
+		displayTitle = title;
+		viewX = ((imageWidth / 2) - (DISPLAY_WIDTH / 2));
+		viewY = ((imageHeight / 2) - (DISPLAY_HEIGHT / 2));
 		if (!isOpen) {
+			reCreateThread();
 			isOpen = true;
-			glThread = new Thread(new Runnable() {
-				public void run() {
-					imageWidth = width;
-					imageHeight = height;
-					viewX = ((imageWidth / 2) - (DISPLAY_WIDTH / 2));
-					viewY = ((imageHeight / 2) - (DISPLAY_HEIGHT / 2));
-					startGL();
-				}
-			}, "GL Render Thread");
+			hasBeenOpened = true;
 			glThread.start();
 		}
+		UIControl.updateReopenButton(isOpen, hasBeenOpened);
+	}
+
+	public static synchronized void open() {
+		if (!isOpen && hasBeenOpened) {
+			reCreateThread();
+			isOpen = true;
+			glThread.start();
+		}
+		UIControl.updateReopenButton(isOpen, hasBeenOpened);
 	}
 
 	public static void startGL() {
@@ -62,7 +83,7 @@ public class GLControl {
 		try {
 			Display.setDisplayMode(new DisplayMode(DISPLAY_WIDTH,
 					DISPLAY_HEIGHT));
-			Display.setTitle("Fractal Viewer");
+			Display.setTitle(displayTitle);
 			Display.setVSyncEnabled(true);
 			log.info("Opening GL Display!");
 			Display.create();
@@ -87,7 +108,7 @@ public class GLControl {
 	public static void startLoop() {
 		while (isOpen) {
 			if (Display.isCloseRequested()) {
-				stop();
+				stop(false);
 			}
 
 			pullInput();
@@ -96,6 +117,7 @@ public class GLControl {
 
 			Display.update();
 		}
+		UIControl.updateReopenButton(isOpen, hasBeenOpened);
 	}
 
 	public static void pullInput() {
@@ -108,12 +130,16 @@ public class GLControl {
 		GL11.glTranslatef(0f, 0f, 0f);
 	}
 
-	public static void stop() {
+	public static void stop(boolean closing) {
 		isOpen = false;
+		shouldClose = closing;
 	}
 
 	public static void destroy() {
 		isOpen = false;
 		Display.destroy();
+		if(shouldClose) {
+			System.exit(0);
+		}
 	}
 }

@@ -1,5 +1,7 @@
 package com.pommert.jedidiah.fractalviewer2;
 
+import java.io.File;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -38,14 +40,22 @@ public class FractalViewer2 {
 		UIControl.show();
 	}
 
-	public static void start(int width, int height) {
-		GLControl.open(width, height);
+	public static void start(File file, String fractalGeneratorName, int width, int height) {
+		log.info("Starting");
+		
+		// start Output Control
+		OutputControl.start(file, fractalGeneratorName, width, height);
+		
+		// start GL Control
+		GLControl.open(fractalGeneratorName, width, height);
 	}
 
 	public static void stop() {
 		log.info("Stopping");
+		
+		OutputControl.stop();
 
 		// close gl
-		GLControl.stop();
+		GLControl.stop(true);
 	}
 }

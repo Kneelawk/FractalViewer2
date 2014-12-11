@@ -7,6 +7,8 @@ import java.awt.GridBagLayout;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
@@ -18,6 +20,7 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
@@ -31,7 +34,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.pommert.jedidiah.fractalviewer2.FractalViewer2;
+import com.pommert.jedidiah.fractalviewer2.classpath.CPControl;
 import com.pommert.jedidiah.fractalviewer2.fractal.FractalControl;
+import com.pommert.jedidiah.fractalviewer2.ui.opengl.GLControl;
 import com.pommert.jedidiah.fractalviewer2.ui.util.IntTextFieldControl;
 
 public class UIControl {
@@ -47,6 +52,8 @@ public class UIControl {
 	public static JScrollPane configPanel;
 	public static JProgressBar generation;
 	public static JProgressBar overall;
+	public static JButton reOpen;
+	public static JButton run;
 
 	public static String[] fractalList;
 
@@ -170,10 +177,38 @@ public class UIControl {
 		// control buttons
 		JButton close = new JButton("Close");
 		buttonPanel.add(close);
-		JButton run = new JButton("Run...");
+		reOpen = new JButton("Re-open Viewer");
+		reOpen.setEnabled(false);
+		buttonPanel.add(reOpen);
+		run = new JButton("Run...");
+		run.setEnabled(false);
 		buttonPanel.add(run);
 
 		// add Listeners
+
+		// file possibility detection
+		outputField.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				checkRunButton();
+			}
+		});
+
+		// more file possibility detection
+		outputField.addKeyListener(new KeyListener() {
+			@Override
+			public void keyTyped(KeyEvent e) {
+			}
+
+			@Override
+			public void keyPressed(KeyEvent e) {
+			}
+
+			@Override
+			public void keyReleased(KeyEvent e) {
+				checkRunButton();
+			}
+		});
 
 		// file selection
 		selectFile.addActionListener(new ActionListener() {
@@ -189,6 +224,7 @@ public class UIControl {
 					File file = new File(fileString).getAbsoluteFile();
 					previousDir = file.getParentFile();
 					outputField.setText(file.getPath());
+					checkRunButton();
 				}
 			}
 		});
@@ -210,15 +246,39 @@ public class UIControl {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				frame.setVisible(false);
-				FractalViewer2.stop();
-				System.exit(0);
+				if (GLControl.isOpen) {
+					FractalViewer2.stop();
+				} else {
+					FractalViewer2.stop();
+					System.exit(0);
+				}
+			}
+		});
+
+		reOpen.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GLControl.open();
 			}
 		});
 
 		run.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				FractalViewer2.start(widthField.data, heightField.data);
+				File outputFile = new File(outputField.getText());
+				if (outputFile.exists()) {
+					int result = JOptionPane.showConfirmDialog(frame,
+							"Are you sure you want to override existing file:\n"
+									+ outputFile.getAbsolutePath(),
+							"Override existing file?",
+							JOptionPane.YES_NO_OPTION,
+							JOptionPane.WARNING_MESSAGE);
+					if (result == JOptionPane.NO_OPTION)
+						return;
+				}
+				FractalViewer2.start(outputFile,
+						(String) fractalSelector.getSelectedItem(),
+						widthField.data, heightField.data);
 			}
 		});
 
@@ -230,11 +290,54 @@ public class UIControl {
 		frame.setVisible(true);
 	}
 
-	public static String getGenerationString(int progress) {
-		return String.format("Fractal Generation: %d%%", progress);
+	public static boolean checkRunButton() {
+		File file = new File(outputField.getText());
+
+		if (!file.isAbsolute()) {
+			file = new File(new File(CPControl.class.getProtectionDomain()
+					.getCodeSource().getLocation().getPath()).getParentFile(),
+					outputField.getText());
+		}
+
+		if (checkFile(file) && (!file.exists() || file.isFile())) {
+			updateRunButton(true);
+			return true;
+		} else {
+			updateRunButton(false);
+			return false;
+		}
 	}
 
-	public static String getOverallString(int progress) {
-		return String.format("Overall Progress: %d%%", progress);
+	public static boolean checkFile(File file) {
+		while (!file.exists()) {
+			file = file.getParentFile();
+		}
+		return file.canWrite();
+	}
+
+	public static void updateRunButton(boolean hasOutput) {
+		run.setEnabled(hasOutput);
+	}
+
+	public static void updateReopenButton(boolean isOpen, boolean hasBeenOpened) {
+		reOpen.setEnabled(!isOpen && hasBeenOpened);
+	}
+
+	public static void setGenerationPercentDone(double progress) {
+		generation.setValue((int) progress);
+		generation.setString(getGenerationString(progress));
+	}
+
+	public static void setOverallPercentDone(double progress) {
+		overall.setValue((int) progress);
+		overall.setString(getOverallString(progress));
+	}
+
+	public static String getGenerationString(double progress) {
+		return String.format("Fractal Generation: %s%%", progress);
+	}
+
+	public static String getOverallString(double progress) {
+		return String.format("Overall Progress: %s%%", progress);
 	}
 }

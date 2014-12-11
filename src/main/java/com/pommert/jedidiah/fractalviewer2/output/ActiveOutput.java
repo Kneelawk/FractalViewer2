@@ -11,7 +11,12 @@ public abstract class ActiveOutput {
 
 	public abstract void run();
 
-	public abstract void save();
+	/**
+	 * Only used if the user cancels
+	 */
+	public abstract void stop();
+
+	public abstract void save(boolean stopping);
 
 	/**
 	 * Used by the active outputs to tell the OutputControl to generate the
@@ -29,5 +34,9 @@ public abstract class ActiveOutput {
 
 	protected void updateOutput() {
 		OutputControl.update();
+	}
+
+	public double getPercentDone() {
+		return 50;
 	}
 }
