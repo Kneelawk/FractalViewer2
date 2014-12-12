@@ -17,6 +17,7 @@ import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -54,6 +55,7 @@ public class UIControl {
 	public static JProgressBar overall;
 	public static JButton reOpen;
 	public static JButton run;
+	public static JCheckBox useGl;
 
 	public static String[] fractalList;
 
@@ -165,6 +167,10 @@ public class UIControl {
 		JPanel progressPanel = new JPanel();
 		progressPanel.setLayout(new BoxLayout(progressPanel, BoxLayout.Y_AXIS));
 		buttonPanel.add(progressPanel);
+		// should display to opengl window
+		useGl = new JCheckBox("Display fractal in OpenGL Window");
+		progressPanel.add(useGl);
+		useGl.setSelected(true);
 		generation = new JProgressBar();
 		progressPanel.add(generation);
 		generation.setString(getGenerationString(0));
@@ -238,6 +244,14 @@ public class UIControl {
 						fractalName + " Properties"));
 				configPanel.setViewportView(FractalControl
 						.getFractalConfigGui(fractalName));
+			}
+		});
+		
+		// use gl listener
+		useGl.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				GLControl.glInteractionEnabled = useGl.isSelected();
 			}
 		});
 

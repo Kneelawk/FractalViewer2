@@ -45,9 +45,6 @@ public class FractalViewer2 {
 		
 		// start Output Control
 		OutputControl.start(file, fractalGeneratorName, width, height);
-		
-		// start GL Control
-		GLControl.open(fractalGeneratorName, width, height);
 	}
 
 	public static void stop() {

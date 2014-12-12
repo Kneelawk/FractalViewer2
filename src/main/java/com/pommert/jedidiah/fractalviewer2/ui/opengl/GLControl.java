@@ -23,11 +23,13 @@ public class GLControl {
 	public static String displayTitle = "Fractal Viewer";
 	public static boolean shouldClose = false;
 
+	public static boolean glInteractionEnabled = true;
+
 	public static void initGL() {
 		log = LogManager.getLogger("GLControl");
 		log.info("Init GL");
 	}
-	
+
 	public static synchronized void reCreateThread() {
 		glThread = new Thread(new Runnable() {
 			public void run() {
@@ -37,6 +39,8 @@ public class GLControl {
 	}
 
 	public static synchronized void open(String title, int width, int height) {
+		if (!glInteractionEnabled)
+			return;
 		imageWidth = width;
 		imageHeight = height;
 		displayTitle = title;
@@ -138,7 +142,7 @@ public class GLControl {
 	public static void destroy() {
 		isOpen = false;
 		Display.destroy();
-		if(shouldClose) {
+		if (shouldClose) {
 			System.exit(0);
 		}
 	}

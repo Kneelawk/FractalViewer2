@@ -20,7 +20,8 @@ public class LWJGLOutput extends PassiveOutput {
 
 	@Override
 	public void setPixel(int x, int y, Colour color) {
-
+		if (!GLControl.glInteractionEnabled)
+			return;
 	}
 
 	@Override
