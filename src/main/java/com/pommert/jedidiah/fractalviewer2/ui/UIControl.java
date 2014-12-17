@@ -313,9 +313,10 @@ public class UIControl {
 		run.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				String fractalGenName = (String) fractalSelector.getSelectedItem();
+				String fractalGenName = (String) fractalSelector
+						.getSelectedItem();
 				FractalControl.starting(fractalGenName, seed);
-				
+
 				String outputDir = outputDirField.getText();
 				String outputName = outputNameField.getText();
 				String outputFileName = outputName
@@ -325,23 +326,18 @@ public class UIControl {
 				if (outputFile.exists()) {
 					int num = 1;
 					outputFileName = outputName
-							+ (outputName.length() > 0 ? "_" : "")
-							+ "#"
-							+ num
-							+ "_"
-							+ FractalControl
-									.getFileName(fractalGenName) + ".png";
+							+ (outputName.length() > 0 ? "_" : "") + "#" + num
+							+ "_" + FractalControl.getFileName(fractalGenName)
+							+ ".png";
 					File newOutputFile = new File(outputDir, outputFileName);
 
 					while (newOutputFile.exists()) {
 						num++;
 						outputFileName = outputName
-								+ (outputName.length() > 0 ? "_" : "")
-								+ "#"
-								+ num
-								+ "_"
-								+ FractalControl
-										.getFileName(fractalGenName) + ".png";
+								+ (outputName.length() > 0 ? "_" : "") + "#"
+								+ num + "_"
+								+ FractalControl.getFileName(fractalGenName)
+								+ ".png";
 						newOutputFile = new File(outputDir, outputFileName);
 					}
 
@@ -373,8 +369,26 @@ public class UIControl {
 					else if (result == JOptionPane.NO_OPTION)
 						outputFile = newOutputFile;
 				}
-				FractalViewer2.start(outputFile,
-						fractalGenName,
+
+				if (useGl.isSelected()
+						&& (widthField.data * heightField.data) > (1920 * 1080)) {
+					int result = JOptionPane
+							.showConfirmDialog(
+									frame,
+									"Are you sure you want to generate a fractal as large as "
+											+ widthField.data
+											+ "x"
+											+ heightField.data
+											+ " with opengl display enabled?\n"
+											+ "Doing so could use VERY LARGE amounts of memory.",
+									"Are you sure you want to use opengl?",
+									JOptionPane.YES_NO_OPTION,
+									JOptionPane.WARNING_MESSAGE);
+					if (result == JOptionPane.NO_OPTION)
+						return;
+				}
+
+				FractalViewer2.start(outputFile, fractalGenName,
 						widthField.data, heightField.data);
 			}
 		});

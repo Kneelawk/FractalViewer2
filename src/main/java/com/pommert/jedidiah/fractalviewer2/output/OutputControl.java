@@ -71,6 +71,9 @@ public class OutputControl {
 
 	protected static void _start(File file, String fractalGeneratorName,
 			int width, int height) {
+		if (!file.getParentFile().exists())
+			file.getParentFile().mkdirs();
+
 		log.info("Setting Up Outputs");
 		for (ActiveOutput out : activeOutputs) {
 			out.setup(file, width, height);
