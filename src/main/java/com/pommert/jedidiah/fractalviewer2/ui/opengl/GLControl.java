@@ -10,8 +10,8 @@ import org.lwjgl.opengl.GL11;
 import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
 
 public class GLControl {
-	public static final int DISPLAY_WIDTH = 640;
-	public static final int DISPLAY_HEIGHT = 480;
+	public static final int DISPLAY_WIDTH = 1000;
+	public static final int DISPLAY_HEIGHT = 600;
 
 	public static Logger log;
 	public static Thread glThread;
@@ -143,6 +143,7 @@ public class GLControl {
 		isOpen = false;
 		Display.destroy();
 		if (shouldClose) {
+			log.info("Exiting.");
 			System.exit(0);
 		}
 	}

@@ -55,14 +55,14 @@ public class OutputControl {
 	}
 
 	public static void start(File file, String fractalGeneratorName, int width,
-			int height) {
+			int height, int seed) {
 		resetUpdates();
 		if (!running) {
 			running = true;
 			generationThread = new Thread(new Runnable() {
 				@Override
 				public void run() {
-					_start(file, fractalGeneratorName, width, height);
+					_start(file, fractalGeneratorName, width, height, seed);
 				}
 			}, "Generation Thread");
 			generationThread.start();
@@ -70,7 +70,7 @@ public class OutputControl {
 	}
 
 	protected static void _start(File file, String fractalGeneratorName,
-			int width, int height) {
+			int width, int height, int seed) {
 		log.info("Setting Up Outputs");
 		for (ActiveOutput out : activeOutputs) {
 			out.setup(file, width, height);
@@ -80,7 +80,7 @@ public class OutputControl {
 		}
 
 		currentFractalGeneratorName = fractalGeneratorName;
-		FractalControl.starting(currentFractalGeneratorName);
+		FractalControl.starting(currentFractalGeneratorName, seed);
 
 		log.info("Setting Up Fractal Generator");
 

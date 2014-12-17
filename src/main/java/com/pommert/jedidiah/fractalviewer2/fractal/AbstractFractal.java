@@ -12,10 +12,9 @@ public abstract class AbstractFractal {
 
 	public abstract void buildUI(JPanel panel);
 
-	public abstract void starting();
+	public abstract void starting(int seed);
 
-	public abstract String getFileName(String currentFileNameStart,
-			String currentFileNameEnd);
+	public abstract String getFileName();
 
 	public abstract Colour getPixel(int x, int y);
 

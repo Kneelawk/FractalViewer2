@@ -1,9 +1,9 @@
 package com.pommert.jedidiah.fractalviewer2.ui;
 
 import java.awt.Dimension;
-import java.awt.FileDialog;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,12 +13,14 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.Random;
 
 import javax.imageio.ImageIO;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -35,9 +37,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.pommert.jedidiah.fractalviewer2.FractalViewer2;
-import com.pommert.jedidiah.fractalviewer2.classpath.CPControl;
 import com.pommert.jedidiah.fractalviewer2.fractal.FractalControl;
 import com.pommert.jedidiah.fractalviewer2.ui.opengl.GLControl;
+import com.pommert.jedidiah.fractalviewer2.ui.util.DataChangeListener;
 import com.pommert.jedidiah.fractalviewer2.ui.util.IntTextFieldControl;
 
 public class UIControl {
@@ -45,8 +47,11 @@ public class UIControl {
 	public static Logger log;
 
 	public static JFrame frame;
-	public static JTextField outputField;
+	public static JTextField outputDirField;
+	public static JTextField outputNameField;
 	public static File previousDir = new File(System.getProperty("user.home"));
+	public static IntTextFieldControl seedField;
+	public static Random seedRng;
 	public static IntTextFieldControl widthField;
 	public static IntTextFieldControl heightField;
 	public static JComboBox<String> fractalSelector;
@@ -101,22 +106,51 @@ public class UIControl {
 		frame.add("North", northPanel);
 		GridBagConstraints c = new GridBagConstraints();
 		c.ipadx = 5;
+		c.anchor = GridBagConstraints.WEST;
 
-		// output file
+		// output dir
 		c.fill = GridBagConstraints.NONE;
 		c.gridx = 0;
 		c.gridy = 0;
-		northPanel.add(new JLabel("Output File (png):"));
+		northPanel.add(new JLabel("Output Folder:"), c);
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 1;
 		c.gridy = 0;
-		outputField = new JTextField(30);
-		northPanel.add(outputField);
+		outputDirField = new JTextField(30);
+		northPanel.add(outputDirField, c);
 		c.fill = GridBagConstraints.NONE;
 		c.gridx = 2;
 		c.gridy = 0;
 		JButton selectFile = new JButton("Select...");
 		northPanel.add(selectFile);
+
+		// output file name
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 0;
+		c.gridy = 1;
+		northPanel.add(new JLabel("Special File Identifier (optional):"), c);
+		outputNameField = new JTextField(30);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 1;
+		c.gridy = 1;
+		northPanel.add(outputNameField, c);
+
+		// seed selection
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 0;
+		c.gridy = 2;
+		northPanel.add(new JLabel("Fractal Seed:"), c);
+		seedRng = new Random();
+		int seed = seedRng.nextInt();
+		seedField = new IntTextFieldControl(new JTextField(
+				String.valueOf(seed), 30), seed);
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.gridx = 1;
+		northPanel.add(seedField.field, c);
+		JButton newSeedButton = new JButton("New Seed");
+		c.fill = GridBagConstraints.NONE;
+		c.gridx = 2;
+		northPanel.add(newSeedButton, c);
 
 		// size selection
 		c.fill = GridBagConstraints.NONE;
@@ -133,7 +167,7 @@ public class UIControl {
 		c.gridy = 4;
 		northPanel.add(new JLabel("Image height:"), c);
 		heightField = new IntTextFieldControl(new JTextField("1080", 30), 1080);
-		c.fill = GridBagConstraints.NONE;
+		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 1;
 		c.gridy = 4;
 		northPanel.add(heightField.field, c);
@@ -168,9 +202,8 @@ public class UIControl {
 		progressPanel.setLayout(new BoxLayout(progressPanel, BoxLayout.Y_AXIS));
 		buttonPanel.add(progressPanel);
 		// should display to opengl window
-		useGl = new JCheckBox("Display fractal in OpenGL Window");
+		useGl = new JCheckBox("Display fractal in OpenGL Window", true);
 		progressPanel.add(useGl);
-		useGl.setSelected(true);
 		generation = new JProgressBar();
 		progressPanel.add(generation);
 		generation.setString(getGenerationString(0));
@@ -193,7 +226,7 @@ public class UIControl {
 		// add Listeners
 
 		// file possibility detection
-		outputField.addActionListener(new ActionListener() {
+		outputDirField.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				checkRunButton();
@@ -201,7 +234,7 @@ public class UIControl {
 		});
 
 		// more file possibility detection
-		outputField.addKeyListener(new KeyListener() {
+		outputDirField.addKeyListener(new KeyListener() {
 			@Override
 			public void keyTyped(KeyEvent e) {
 			}
@@ -220,18 +253,24 @@ public class UIControl {
 		selectFile.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				FileDialog fd = new FileDialog((JFrame) null);
-				fd.setTitle("Save Fractal PNG");
-				fd.setDirectory(previousDir.getPath());
-				fd.setMode(FileDialog.SAVE);
-				fd.setVisible(true);
-				String fileString = fd.getDirectory() + fd.getFile();
-				if (fileString != null && !"nullnull".equals(fileString)) {
-					File file = new File(fileString).getAbsoluteFile();
-					previousDir = file.getParentFile();
-					outputField.setText(file.getPath());
+				JFileChooser fd = new JFileChooser(previousDir);
+				fd.setDialogTitle("Save Fractal Dir");
+				fd.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				int result = fd.showOpenDialog(null);
+				File file = fd.getSelectedFile().getAbsoluteFile();
+				if (result == JFileChooser.APPROVE_OPTION) {
+					previousDir = file;
+					outputDirField.setText(file.getPath());
 					checkRunButton();
 				}
+			}
+		});
+
+		// seed selection
+		newSeedButton.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				seedField.set(seedRng.nextInt());
 			}
 		});
 
@@ -246,7 +285,7 @@ public class UIControl {
 						.getFractalConfigGui(fractalName));
 			}
 		});
-		
+
 		// use gl listener
 		useGl.addActionListener(new ActionListener() {
 			@Override
@@ -260,12 +299,7 @@ public class UIControl {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				frame.setVisible(false);
-				if (GLControl.isOpen) {
-					FractalViewer2.stop();
-				} else {
-					FractalViewer2.stop();
-					System.exit(0);
-				}
+				FractalViewer2.stop();
 			}
 		});
 
@@ -279,24 +313,74 @@ public class UIControl {
 		run.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				File outputFile = new File(outputField.getText());
+				String outputDir = outputDirField.getText();
+				String outputName = outputNameField.getText();
+				String outputFileName = outputName
+						+ (outputName.length() > 0 ? "_" : "")
+						+ FractalControl.getFileName((String) fractalSelector
+								.getSelectedItem()) + ".png";
+				File outputFile = new File(outputDir, outputFileName);
 				if (outputFile.exists()) {
-					int result = JOptionPane.showConfirmDialog(frame,
-							"Are you sure you want to override existing file:\n"
-									+ outputFile.getAbsolutePath(),
-							"Override existing file?",
-							JOptionPane.YES_NO_OPTION,
-							JOptionPane.WARNING_MESSAGE);
-					if (result == JOptionPane.NO_OPTION)
+					int num = 1;
+					outputFileName = outputName
+							+ (outputName.length() > 0 ? "_" : "")
+							+ "#"
+							+ num
+							+ "_"
+							+ FractalControl
+									.getFileName((String) fractalSelector
+											.getSelectedItem()) + ".png";
+					File newOutputFile = new File(outputDir, outputFileName);
+
+					while (newOutputFile.exists()) {
+						num++;
+						outputFileName = outputName
+								+ (outputName.length() > 0 ? "_" : "")
+								+ "#"
+								+ num
+								+ "_"
+								+ FractalControl
+										.getFileName((String) fractalSelector
+												.getSelectedItem()) + ".png";
+						newOutputFile = new File(outputDir, outputFileName);
+					}
+
+					int result = JOptionPane.CANCEL_OPTION;
+					try {
+						result = JOptionPane
+								.showOptionDialog(
+										frame,
+										"Are you sure you want to override existing file:\n"
+												+ outputFile.getCanonicalPath()
+												+ "\nor do you just want to use the new file:\n"
+												+ newOutputFile
+														.getCanonicalPath(),
+										"Override existing file?",
+										JOptionPane.YES_NO_CANCEL_OPTION,
+										JOptionPane.WARNING_MESSAGE, null,
+										new Object[] {
+												"Override Existing File",
+												"Use New File", "Cancel" },
+										"Use New File");
+					} catch (HeadlessException e1) {
+						e1.printStackTrace();
+					} catch (IOException e1) {
+						e1.printStackTrace();
+					}
+
+					if (result == JOptionPane.CANCEL_OPTION)
 						return;
+					else if (result == JOptionPane.NO_OPTION)
+						outputFile = newOutputFile;
 				}
 				FractalViewer2.start(outputFile,
 						(String) fractalSelector.getSelectedItem(),
-						widthField.data, heightField.data);
+						widthField.data, heightField.data, seedField.data);
 			}
 		});
 
-		frame.setSize(600, 700);
+		frame.setSize(800, 600);
+		frame.setMinimumSize(new Dimension(800, 600));
 	}
 
 	public static void show() {
@@ -305,15 +389,13 @@ public class UIControl {
 	}
 
 	public static boolean checkRunButton() {
-		File file = new File(outputField.getText());
+		File file = new File(outputDirField.getText());
 
 		if (!file.isAbsolute()) {
-			file = new File(new File(CPControl.class.getProtectionDomain()
-					.getCodeSource().getLocation().getPath()).getParentFile(),
-					outputField.getText());
+			file = file.getAbsoluteFile();
 		}
 
-		if (checkFile(file) && (!file.exists() || file.isFile())) {
+		if (checkFile(file) && (!file.exists() || file.isDirectory())) {
 			updateRunButton(true);
 			return true;
 		} else {
@@ -353,5 +435,23 @@ public class UIControl {
 
 	public static String getOverallString(double progress) {
 		return String.format("Overall Progress: %s%%", progress);
+	}
+
+	public static double getFractalWidth() {
+		return widthField.data;
+	}
+
+	public static void addWidthDataChangeListener(
+			DataChangeListener<Integer> listener) {
+		widthField.addDataChangeListener(listener);
+	}
+
+	public static double getFractalHeight() {
+		return heightField.data;
+	}
+
+	public static void addHeightDataChangeListener(
+			DataChangeListener<Integer> listener) {
+		heightField.addDataChangeListener(listener);
 	}
 }

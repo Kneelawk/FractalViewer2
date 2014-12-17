@@ -40,19 +40,27 @@ public class FractalViewer2 {
 		UIControl.show();
 	}
 
-	public static void start(File file, String fractalGeneratorName, int width, int height) {
+	public static void start(File file, String fractalGeneratorName, int width,
+			int height, int seed) {
 		log.info("Starting");
-		
+
 		// start Output Control
-		OutputControl.start(file, fractalGeneratorName, width, height);
+		OutputControl.start(file, fractalGeneratorName, width, height, seed);
 	}
 
 	public static void stop() {
 		log.info("Stopping");
-		
+
 		OutputControl.stop();
 
 		// close gl
+		boolean wasOpen = GLControl.isOpen;
 		GLControl.stop(true);
+		// if the gl window was open, it will exit when it has released all it's
+		// resources
+		if (!wasOpen) {
+			log.info("Exiting.");
+			System.exit(0);
+		}
 	}
 }

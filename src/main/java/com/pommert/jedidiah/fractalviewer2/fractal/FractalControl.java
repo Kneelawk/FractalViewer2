@@ -31,8 +31,12 @@ public class FractalControl {
 		fractals.put(fract.getName(), fract);
 	}
 
-	public static void starting(String name) {
-		getFractal(name).starting();
+	public static void starting(String name, int seed) {
+		getFractal(name).starting(seed);
+	}
+
+	public static String getFileName(String name) {
+		return getFractal(name).getFileName();
 	}
 
 	public static Colour generatePixel(String name, int x, int y) {
