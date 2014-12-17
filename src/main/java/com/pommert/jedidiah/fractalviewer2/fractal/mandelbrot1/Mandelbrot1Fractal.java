@@ -9,6 +9,7 @@ import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
@@ -17,6 +18,9 @@ import javax.swing.JPanel;
 import javax.swing.JTextField;
 import javax.swing.border.EtchedBorder;
 import javax.swing.border.TitledBorder;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import com.pommert.jedidiah.fractalviewer2.fractal.AbstractFractal;
 import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
@@ -27,15 +31,17 @@ import com.pommert.jedidiah.fractalviewer2.util.Colour;
 
 public class Mandelbrot1Fractal extends AbstractFractal {
 
-	private int seed;
+	public Logger log;
 
 	// generation plane center x
 	private DoubleTextFieldControl planeCenterXField;
 	private double planeCenterX;
+	private double planeMinX;
 
 	// generation plane canter y
 	private DoubleTextFieldControl planeCenterYField;
 	private double planeCenterY;
+	private double planeMinY;
 
 	// generation plane width
 	private DoubleTextFieldControl planeWidthField;
@@ -61,8 +67,12 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 	private JPanel boxPanel;
 	private DoubleTextFieldControl boxCenterXField;
 	private double boxCenterX;
+	private double boxMinX;
+	private double boxMaxX;
 	private DoubleTextFieldControl boxCenterYField;
 	private double boxCenterY;
+	private double boxMinY;
+	private double boxMaxY;
 	private DoubleTextFieldControl boxWidthField;
 	private double boxWidth;
 	private DoubleTextFieldControl boxHeightField;
@@ -83,9 +93,14 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 	private DoubleTextFieldControl brightnessMultiplierField;
 	private double brightnessMultiplier;
 
+	private int seed;
+	private Random rng;
+	private int randomOffset;
+
 	@Override
 	public void init() {
-
+		log = LogManager.getLogger(getName());
+		log.info("Init Mandelbrot1");
 	}
 
 	@Override
@@ -436,6 +451,9 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 			planeHeightField.set(planeHeight);
 		}
 
+		planeMinX = planeCenterX - planeWidth / 2;
+		planeMinY = planeCenterY - planeHeight / 2;
+
 		mits = mitsField.data;
 
 		useDefaultMits = useDefaultMitsCheck.isSelected();
@@ -456,24 +474,116 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 					UIControl.getFractalHeight());
 			boxHeightField.set(boxHeight);
 		}
-		
+
+		boxMinX = boxCenterX - boxWidth / 2;
+		boxMaxX = boxCenterX + boxWidth / 2;
+		boxMinY = boxCenterY - boxHeight / 2;
+		boxMaxY = boxCenterY + boxHeight / 2;
+
 		drawBox = drawBoxCheck.isSelected();
-		
+
 		colorScheme = (String) colorSchemeCBox.getSelectedItem();
-		
+
 		hueMultiplier = hueMultiplierField.data;
-		
+
 		brightnessMultiplier = brightnessMultiplierField.data;
+
+		rng = new Random(seed);
+		randomOffset = rng.nextInt();
+
+		log.info(String.format("Mandelbrot1 Generator settings:\n"
+				+ "generated plane xmin: %s,\ngenerated plane ymin %s,\n"
+				+ "generated plane width: %s,\n"
+				+ "generated plane height: %s,\nmax iterations: %d,\n"
+				+ "color scheme: %s,\nhue multiplier: %s,\n"
+				+ "brightness multiplier: %s,\nseed: %d,\n"
+				+ "random offset: %d.", planeMinX, planeMinY, planeWidth,
+				planeHeight, mits, colorScheme, hueMultiplier,
+				brightnessMultiplier, seed, randomOffset));
 	}
 
 	@Override
 	public String getFileName() {
-		return getName();
+		return getName()
+				+ "_x"
+				+ planeCenterX
+				+ "_y"
+				+ planeCenterY
+				+ "_w"
+				+ planeWidth
+				+ "_h"
+				+ planeHeight
+				+ "_it"
+				+ mits
+				+ (crossHairs ? "_ch" : "")
+				+ (drawBox ? "_box(" + boxCenterX + "," + boxCenterY + ")("
+						+ boxWidth + "x" + boxHeight + ")" : "")
+				+ "_cs:"
+				+ colorScheme
+				+ (colorScheme.equals("Random") ? "_seed:" + seed : "")
+				+ (colorScheme.equals("Hue") ? "_hm" + hueMultiplier + "_bm"
+						+ brightnessMultiplier : "");
 	}
 
 	@Override
-	public Colour getPixel(int x, int y) {
-		return null;
+	public Colour getPixel(int pixelX, int pixelY) {
+		double x = (((double) pixelX) / ((double) UIControl.getFractalWidth()))
+				* planeWidth + planeMinX;
+		double y = (((double) pixelY) / ((double) UIControl.getFractalHeight()))
+				* planeHeight + planeMinY;
+		double nx = (((double) (pixelX + 1)) / ((double) UIControl
+				.getFractalWidth())) * planeWidth + planeMinX;
+		double ny = (((double) (pixelY + 1)) / ((double) UIControl
+				.getFractalHeight())) * planeHeight + planeMinY;
+
+		double a = x;
+		double b = y;
+
+		int n = 0;
+		for (n = 0; n < mits; n++) {
+			double aa = a * a;
+			double bb = b * b;
+
+			double twoab = 2.0 * a * b;
+
+			a = aa - bb + x;
+			b = twoab + y;
+
+			if (aa + bb > 16.0) {
+				break;
+			}
+		}
+
+		if (drawBox
+				&& ((y <= boxMaxY && boxMaxY < ny && boxMinX <= x && x <= boxMaxX)
+						|| (y <= boxMinY && boxMinY < ny && boxMinX <= x && x <= boxMaxX)
+						|| (x <= boxMaxX && boxMaxX < nx && boxMinY <= y && y <= boxMaxY) || (x <= boxMinX
+						&& boxMinX < nx && boxMinY <= y && y <= boxMaxY))) {
+			return new Colour(255);
+		} else if (crossHairs && ((x <= 0 && 0 < nx) || (y <= 0 && 0 < ny))) {
+			return new Colour(255, 0, 0);
+		} else if (n >= mits) {
+			return new Colour(0);
+		} else {
+			if (colorScheme.equals("Segment")) {
+				// segment color scheme
+				return new Colour((((n * 18) >> 0) % 0xF) * 16,
+						(((n * 18) >> 4) % 0xF) * 16,
+						(((n * 18) >> 8) % 0xF) * 16);
+			} else if (colorScheme.equals("Striped")) {
+				// striped color scheme
+				return new Colour((n * 16 % 256), (int) a, (int) b);
+			} else if (colorScheme.equals("Random")) {
+				// random color scheme
+				rng.setSeed(n + randomOffset);
+				return new Colour(rng.nextInt(222), rng.nextInt(222),
+						rng.nextInt(222));
+			} else {
+				// hue color scheme
+				return Colour.fromHSB((n * hueMultiplier % 256f) / 256f, 1.0f,
+						(n * brightnessMultiplier % 256f) / 256f);
+			}
+		}
 	}
 
 	private double getHeight(double planeWidth, double windowWidth,

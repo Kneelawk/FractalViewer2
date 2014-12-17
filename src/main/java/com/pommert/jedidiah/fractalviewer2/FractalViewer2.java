@@ -41,11 +41,11 @@ public class FractalViewer2 {
 	}
 
 	public static void start(File file, String fractalGeneratorName, int width,
-			int height, int seed) {
+			int height) {
 		log.info("Starting");
 
 		// start Output Control
-		OutputControl.start(file, fractalGeneratorName, width, height, seed);
+		OutputControl.start(file, fractalGeneratorName, width, height);
 	}
 
 	public static void stop() {

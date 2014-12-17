@@ -313,12 +313,14 @@ public class UIControl {
 		run.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				String fractalGenName = (String) fractalSelector.getSelectedItem();
+				FractalControl.starting(fractalGenName, seed);
+				
 				String outputDir = outputDirField.getText();
 				String outputName = outputNameField.getText();
 				String outputFileName = outputName
 						+ (outputName.length() > 0 ? "_" : "")
-						+ FractalControl.getFileName((String) fractalSelector
-								.getSelectedItem()) + ".png";
+						+ FractalControl.getFileName(fractalGenName) + ".png";
 				File outputFile = new File(outputDir, outputFileName);
 				if (outputFile.exists()) {
 					int num = 1;
@@ -328,8 +330,7 @@ public class UIControl {
 							+ num
 							+ "_"
 							+ FractalControl
-									.getFileName((String) fractalSelector
-											.getSelectedItem()) + ".png";
+									.getFileName(fractalGenName) + ".png";
 					File newOutputFile = new File(outputDir, outputFileName);
 
 					while (newOutputFile.exists()) {
@@ -340,8 +341,7 @@ public class UIControl {
 								+ num
 								+ "_"
 								+ FractalControl
-										.getFileName((String) fractalSelector
-												.getSelectedItem()) + ".png";
+										.getFileName(fractalGenName) + ".png";
 						newOutputFile = new File(outputDir, outputFileName);
 					}
 
@@ -374,8 +374,8 @@ public class UIControl {
 						outputFile = newOutputFile;
 				}
 				FractalViewer2.start(outputFile,
-						(String) fractalSelector.getSelectedItem(),
-						widthField.data, heightField.data, seedField.data);
+						fractalGenName,
+						widthField.data, heightField.data);
 			}
 		});
 

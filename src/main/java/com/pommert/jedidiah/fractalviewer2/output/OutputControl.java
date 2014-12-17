@@ -55,14 +55,14 @@ public class OutputControl {
 	}
 
 	public static void start(File file, String fractalGeneratorName, int width,
-			int height, int seed) {
+			int height) {
 		resetUpdates();
 		if (!running) {
 			running = true;
 			generationThread = new Thread(new Runnable() {
 				@Override
 				public void run() {
-					_start(file, fractalGeneratorName, width, height, seed);
+					_start(file, fractalGeneratorName, width, height);
 				}
 			}, "Generation Thread");
 			generationThread.start();
@@ -70,7 +70,7 @@ public class OutputControl {
 	}
 
 	protected static void _start(File file, String fractalGeneratorName,
-			int width, int height, int seed) {
+			int width, int height) {
 		log.info("Setting Up Outputs");
 		for (ActiveOutput out : activeOutputs) {
 			out.setup(file, width, height);
@@ -80,7 +80,6 @@ public class OutputControl {
 		}
 
 		currentFractalGeneratorName = fractalGeneratorName;
-		FractalControl.starting(currentFractalGeneratorName, seed);
 
 		log.info("Setting Up Fractal Generator");
 
@@ -93,7 +92,7 @@ public class OutputControl {
 			out.save(!running);
 			overallDone = ((double) currentActiveIndex * 100) / maxOutput;
 		}
-		
+
 		currentActiveIndex = 0;
 
 		for (PassiveOutput out : passiveOutputs) {
@@ -125,7 +124,7 @@ public class OutputControl {
 
 	public static void update() {
 		updatePercentDone();
-		if (updates >= 10000) {
+		if (updates >= 1000000) {
 			collectGarbage();
 			resetUpdates();
 		}
@@ -142,7 +141,9 @@ public class OutputControl {
 		ActiveOutput out = activeOutputs.get(currentActiveIndex);
 		double percentDone = out.getPercentDone();
 		UIControl.setGenerationPercentDone(percentDone);
-		UIControl.setOverallPercentDone(overallDone);
+		UIControl.setOverallPercentDone(overallDone
+				+ (overallDone == 100 ? 0
+						: (percentDone / activeOutputs.size())));
 	}
 
 	public static void stop() {

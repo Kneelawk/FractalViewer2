@@ -70,6 +70,9 @@ public class PngjOutput extends ActiveOutput {
 	public void save(boolean stopping) {
 		writer.end();
 		writer.close();
+		
+		writer = null;
+		info = null;
 	}
 
 	@Override

@@ -37,16 +37,16 @@ public class Colour {
 		return (value >> 24) & 0xFF;
 	}
 
-	public static Colour fromHSB(float hue, float saturation, float brightness) {
+	public static Colour fromHSB(double hue, double saturation, double brightness) {
 		int r = 0, g = 0, b = 0;
 		if (saturation == 0) {
-			r = g = b = (int) (brightness * 255.0f + 0.5f);
+			r = g = b = (int) (brightness * 255.0 + 0.5);
 		} else {
-			float h = (hue - (float) Math.floor(hue)) * 6.0f;
-			float f = h - (float) java.lang.Math.floor(h);
-			float p = brightness * (1.0f - saturation);
-			float q = brightness * (1.0f - saturation * f);
-			float t = brightness * (1.0f - (saturation * (1.0f - f)));
+			double h = (hue - Math.floor(hue)) * 6.0f;
+			double f = h - java.lang.Math.floor(h);
+			double p = brightness * (1.0f - saturation);
+			double q = brightness * (1.0f - saturation * f);
+			double t = brightness * (1.0f - (saturation * (1.0f - f)));
 			switch ((int) h) {
 			case 0:
 				r = (int) (brightness * 255.0f + 0.5f);
