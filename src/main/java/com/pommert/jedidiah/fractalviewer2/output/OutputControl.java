@@ -54,9 +54,8 @@ public class OutputControl {
 		initPassiveOutputs();
 	}
 
-	public static void start(File file, String fractalGeneratorName, int width,
+	public static synchronized void start(File file, String fractalGeneratorName, int width,
 			int height) {
-		resetUpdates();
 		if (!running) {
 			running = true;
 			generationThread = new Thread(new Runnable() {
@@ -71,6 +70,7 @@ public class OutputControl {
 
 	protected static void _start(File file, String fractalGeneratorName,
 			int width, int height) {
+		resetUpdates();
 		if (!file.getParentFile().exists())
 			file.getParentFile().mkdirs();
 

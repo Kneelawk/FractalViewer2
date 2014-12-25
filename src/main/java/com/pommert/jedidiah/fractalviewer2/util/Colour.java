@@ -1,6 +1,9 @@
 package com.pommert.jedidiah.fractalviewer2.util;
 
 public class Colour {
+	
+	public static final int BYTES_PER_PIXEL = 4;
+	public static final int BYTES_PER_COLOR = 1;
 
 	public int value = 0;
 
@@ -21,20 +24,20 @@ public class Colour {
 		this(grey, 255);
 	}
 
-	public int getRed() {
-		return (value >> 16) & 0xFF;
+	public byte getRed() {
+		return (byte) ((value >> 16) & 0xFF);
 	}
 
-	public int getGreen() {
-		return (value >> 8) & 0xFF;
+	public byte getGreen() {
+		return (byte) ((value >> 8) & 0xFF);
 	}
 
-	public int getBlue() {
-		return value & 0xFF;
+	public byte getBlue() {
+		return (byte) (value & 0xFF);
 	}
 
-	public int getAlpha() {
-		return (value >> 24) & 0xFF;
+	public byte getAlpha() {
+		return (byte) ((value >> 24) & 0xFF);
 	}
 
 	public static Colour fromHSB(double hue, double saturation, double brightness) {

@@ -15,6 +15,8 @@ public class LWJGLOutput extends PassiveOutput {
 
 	@Override
 	public void setup(File file, int cols, int rows) {
+		if (!GLControl.glInteractionEnabled)
+			return;
 		GLControl.open("Fractal Viewer: " + file.getName(), cols, rows);
 	}
 
@@ -22,6 +24,7 @@ public class LWJGLOutput extends PassiveOutput {
 	public void setPixel(int x, int y, Colour color) {
 		if (!GLControl.glInteractionEnabled)
 			return;
+		GLControl.setPixel(x, y, color);
 	}
 
 	@Override

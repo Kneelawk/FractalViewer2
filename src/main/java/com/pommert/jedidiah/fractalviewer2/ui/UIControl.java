@@ -157,7 +157,7 @@ public class UIControl {
 		c.gridx = 0;
 		c.gridy = 3;
 		northPanel.add(new JLabel("Image width:"), c);
-		widthField = new IntTextFieldControl(new JTextField("1920", 30), 1920);
+		widthField = new IntTextFieldControl(new JTextField("1280", 30), 1280);
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 1;
 		c.gridy = 3;
@@ -166,7 +166,7 @@ public class UIControl {
 		c.gridx = 0;
 		c.gridy = 4;
 		northPanel.add(new JLabel("Image height:"), c);
-		heightField = new IntTextFieldControl(new JTextField("1080", 30), 1080);
+		heightField = new IntTextFieldControl(new JTextField("720", 30), 720);
 		c.fill = GridBagConstraints.HORIZONTAL;
 		c.gridx = 1;
 		c.gridy = 4;
@@ -204,6 +204,7 @@ public class UIControl {
 		// should display to opengl window
 		useGl = new JCheckBox("Display fractal in OpenGL Window", true);
 		progressPanel.add(useGl);
+		useGl.setSelected(GLControl.glInteractionEnabled);
 		generation = new JProgressBar();
 		progressPanel.add(generation);
 		generation.setString(getGenerationString(0));
@@ -221,6 +222,7 @@ public class UIControl {
 		buttonPanel.add(reOpen);
 		run = new JButton("Run...");
 		run.setEnabled(false);
+		checkRunButton();
 		buttonPanel.add(run);
 
 		// add Listeners
@@ -313,22 +315,28 @@ public class UIControl {
 		run.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
+				if (!checkRunButton())
+					return;
+
 				String fractalGenName = (String) fractalSelector
 						.getSelectedItem();
-				FractalControl.starting(fractalGenName, seed);
+				FractalControl.starting(fractalGenName, seedField.data);
 
-				String outputDir = outputDirField.getText();
+				File outputDir = new File(outputDirField.getText())
+						.getAbsoluteFile();
 				String outputName = outputNameField.getText();
+				int width = widthField.data, height = heightField.data;
 				String outputFileName = outputName
 						+ (outputName.length() > 0 ? "_" : "")
-						+ FractalControl.getFileName(fractalGenName) + ".png";
+						+ FractalControl.getFileName(fractalGenName) + "_"
+						+ width + "x" + height + ".png";
 				File outputFile = new File(outputDir, outputFileName);
 				if (outputFile.exists()) {
 					int num = 1;
 					outputFileName = outputName
 							+ (outputName.length() > 0 ? "_" : "") + "#" + num
 							+ "_" + FractalControl.getFileName(fractalGenName)
-							+ ".png";
+							+ "_" + width + "x" + height + ".png";
 					File newOutputFile = new File(outputDir, outputFileName);
 
 					while (newOutputFile.exists()) {
@@ -337,7 +345,7 @@ public class UIControl {
 								+ (outputName.length() > 0 ? "_" : "") + "#"
 								+ num + "_"
 								+ FractalControl.getFileName(fractalGenName)
-								+ ".png";
+								+ "_" + width + "x" + height + ".png";
 						newOutputFile = new File(outputDir, outputFileName);
 					}
 
