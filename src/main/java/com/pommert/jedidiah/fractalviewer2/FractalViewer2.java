@@ -1,7 +1,5 @@
 package com.pommert.jedidiah.fractalviewer2;
 
-import java.io.File;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -40,12 +38,13 @@ public class FractalViewer2 {
 		UIControl.show();
 	}
 
-	public static void start(File file, String fractalGeneratorName, int width,
-			int height) {
+	public static void start(String fractalGeneratorName, int width,
+			int height, int seed, String outputDirName, String outputName) {
 		log.info("Starting");
 
 		// start Output Control
-		OutputControl.start(file, fractalGeneratorName, width, height);
+		OutputControl.start(fractalGeneratorName, width, height, seed,
+				outputDirName, outputName);
 	}
 
 	public static void stop() {
@@ -53,14 +52,9 @@ public class FractalViewer2 {
 
 		OutputControl.stop();
 
+		FractalControl.destroyFractals();
+
 		// close gl
-		boolean wasOpen = GLControl.isOpen;
-		GLControl.stop(true);
-		// if the gl window was open, it will exit when it has released all it's
-		// resources
-		if (!wasOpen) {
-			log.info("Exiting.");
-			System.exit(0);
-		}
+		GLControl.stop();
 	}
 }

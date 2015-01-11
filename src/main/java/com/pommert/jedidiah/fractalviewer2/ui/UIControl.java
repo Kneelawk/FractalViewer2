@@ -1,9 +1,10 @@
 package com.pommert.jedidiah.fractalviewer2.ui;
 
+import java.awt.Component;
+import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
-import java.awt.HeadlessException;
 import java.awt.Image;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -13,6 +14,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 
 import javax.imageio.ImageIO;
@@ -38,6 +43,7 @@ import org.apache.logging.log4j.Logger;
 
 import com.pommert.jedidiah.fractalviewer2.FractalViewer2;
 import com.pommert.jedidiah.fractalviewer2.fractal.FractalControl;
+import com.pommert.jedidiah.fractalviewer2.output.OutputControl;
 import com.pommert.jedidiah.fractalviewer2.ui.opengl.GLControl;
 import com.pommert.jedidiah.fractalviewer2.ui.util.DataChangeListener;
 import com.pommert.jedidiah.fractalviewer2.ui.util.IntTextFieldControl;
@@ -49,7 +55,7 @@ public class UIControl {
 	public static JFrame frame;
 	public static JTextField outputDirField;
 	public static JTextField outputNameField;
-	public static File previousDir = new File(System.getProperty("user.home"));
+	public static File previousDir = new File("").getAbsoluteFile();
 	public static IntTextFieldControl seedField;
 	public static Random seedRng;
 	public static IntTextFieldControl widthField;
@@ -58,9 +64,13 @@ public class UIControl {
 	public static JScrollPane configPanel;
 	public static JProgressBar generation;
 	public static JProgressBar overall;
+	public static JButton close;
 	public static JButton reOpen;
+	public static JButton cancel;
 	public static JButton run;
 	public static JCheckBox useGl;
+
+	public static HashMap<Component, Boolean> wasEnabled = new HashMap<Component, Boolean>();
 
 	public static String[] fractalList;
 
@@ -86,8 +96,10 @@ public class UIControl {
 		// frame
 		frame = new JFrame("Fractal Viewer 2");
 		frame.addWindowListener(new WindowAdapter() {
+			@Override
 			public void windowClosing(WindowEvent e) {
 				frame.setVisible(false);
+				frame.dispose();
 				FractalViewer2.stop();
 			}
 		});
@@ -215,12 +227,15 @@ public class UIControl {
 		overall.setStringPainted(true);
 
 		// control buttons
-		JButton close = new JButton("Close");
+		close = new JButton("Close");
 		buttonPanel.add(close);
 		reOpen = new JButton("Re-open Viewer");
 		reOpen.setEnabled(false);
 		buttonPanel.add(reOpen);
-		run = new JButton("Run...");
+		cancel = new JButton("Cancel Fractal");
+		cancel.setEnabled(false);
+		buttonPanel.add(cancel);
+		run = new JButton("Run");
 		run.setEnabled(false);
 		checkRunButton();
 		buttonPanel.add(run);
@@ -259,9 +274,9 @@ public class UIControl {
 				fd.setDialogTitle("Save Fractal Dir");
 				fd.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				int result = fd.showOpenDialog(null);
-				File file = fd.getSelectedFile().getAbsoluteFile();
+				File file = fd.getSelectedFile();
 				if (result == JFileChooser.APPROVE_OPTION) {
-					previousDir = file;
+					previousDir = file.getAbsoluteFile();
 					outputDirField.setText(file.getPath());
 					checkRunButton();
 				}
@@ -301,6 +316,7 @@ public class UIControl {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				frame.setVisible(false);
+				frame.dispose();
 				FractalViewer2.stop();
 			}
 		});
@@ -312,6 +328,13 @@ public class UIControl {
 			}
 		});
 
+		cancel.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				OutputControl.stop();
+			}
+		});
+
 		run.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
@@ -320,63 +343,6 @@ public class UIControl {
 
 				String fractalGenName = (String) fractalSelector
 						.getSelectedItem();
-				FractalControl.starting(fractalGenName, seedField.data);
-
-				File outputDir = new File(outputDirField.getText())
-						.getAbsoluteFile();
-				String outputName = outputNameField.getText();
-				int width = widthField.data, height = heightField.data;
-				String outputFileName = outputName
-						+ (outputName.length() > 0 ? "_" : "")
-						+ FractalControl.getFileName(fractalGenName) + "_"
-						+ width + "x" + height + ".png";
-				File outputFile = new File(outputDir, outputFileName);
-				if (outputFile.exists()) {
-					int num = 1;
-					outputFileName = outputName
-							+ (outputName.length() > 0 ? "_" : "") + "#" + num
-							+ "_" + FractalControl.getFileName(fractalGenName)
-							+ "_" + width + "x" + height + ".png";
-					File newOutputFile = new File(outputDir, outputFileName);
-
-					while (newOutputFile.exists()) {
-						num++;
-						outputFileName = outputName
-								+ (outputName.length() > 0 ? "_" : "") + "#"
-								+ num + "_"
-								+ FractalControl.getFileName(fractalGenName)
-								+ "_" + width + "x" + height + ".png";
-						newOutputFile = new File(outputDir, outputFileName);
-					}
-
-					int result = JOptionPane.CANCEL_OPTION;
-					try {
-						result = JOptionPane
-								.showOptionDialog(
-										frame,
-										"Are you sure you want to override existing file:\n"
-												+ outputFile.getCanonicalPath()
-												+ "\nor do you just want to use the new file:\n"
-												+ newOutputFile
-														.getCanonicalPath(),
-										"Override existing file?",
-										JOptionPane.YES_NO_CANCEL_OPTION,
-										JOptionPane.WARNING_MESSAGE, null,
-										new Object[] {
-												"Override Existing File",
-												"Use New File", "Cancel" },
-										"Use New File");
-					} catch (HeadlessException e1) {
-						e1.printStackTrace();
-					} catch (IOException e1) {
-						e1.printStackTrace();
-					}
-
-					if (result == JOptionPane.CANCEL_OPTION)
-						return;
-					else if (result == JOptionPane.NO_OPTION)
-						outputFile = newOutputFile;
-				}
 
 				if (useGl.isSelected()
 						&& (widthField.data * heightField.data) > (1920 * 1080)) {
@@ -388,7 +354,7 @@ public class UIControl {
 											+ "x"
 											+ heightField.data
 											+ " with opengl display enabled?\n"
-											+ "Doing so could use VERY LARGE amounts of memory.",
+											+ "Doing so could use VERY LARGE amounts of memory or crach.",
 									"Are you sure you want to use opengl?",
 									JOptionPane.YES_NO_OPTION,
 									JOptionPane.WARNING_MESSAGE);
@@ -396,8 +362,11 @@ public class UIControl {
 						return;
 				}
 
-				FractalViewer2.start(outputFile, fractalGenName,
-						widthField.data, heightField.data);
+				FractalViewer2.start(fractalGenName, widthField.data,
+						heightField.data, seedField.data,
+						outputDirField.getText(), outputNameField.getText());
+
+				disableFrame();
 			}
 		});
 
@@ -437,6 +406,10 @@ public class UIControl {
 		run.setEnabled(hasOutput);
 	}
 
+	public static void updateCancelButton(boolean outputRunning) {
+		cancel.setEnabled(outputRunning);
+	}
+
 	public static void updateReopenButton(boolean isOpen, boolean hasBeenOpened) {
 		reOpen.setEnabled(!isOpen && hasBeenOpened);
 	}
@@ -459,7 +432,7 @@ public class UIControl {
 		return String.format("Overall Progress: %s%%", progress);
 	}
 
-	public static double getFractalWidth() {
+	public static int getFractalWidth() {
 		return widthField.data;
 	}
 
@@ -468,12 +441,65 @@ public class UIControl {
 		widthField.addDataChangeListener(listener);
 	}
 
-	public static double getFractalHeight() {
+	public static int getFractalHeight() {
 		return heightField.data;
 	}
 
 	public static void addHeightDataChangeListener(
 			DataChangeListener<Integer> listener) {
 		heightField.addDataChangeListener(listener);
+	}
+
+	public static JFrame getFrame() {
+		return frame;
+	}
+
+	public static void setDisabled(Container c,
+			HashMap<Component, Boolean> wasEnabled, Component[] notEdit) {
+		List<Component> notEditList = null;
+		if (notEdit != null && notEdit.length > 0) {
+			notEditList = Arrays.<Component> asList(notEdit);
+		} else {
+			notEditList = new ArrayList<Component>();
+		}
+
+		Component[] comps = c.getComponents();
+		for (Component comp : comps) {
+			if (!notEditList.contains(comp)) {
+				wasEnabled.put(comp, comp.isEnabled());
+				if (comp instanceof Container)
+					setDisabled((Container) comp, wasEnabled, notEdit);
+				comp.setEnabled(false);
+			}
+		}
+	}
+
+	public static void setEnabled(Container c,
+			HashMap<Component, Boolean> wasEnabled, Component[] notEdit) {
+		List<Component> notEditList = null;
+		if (notEdit != null && notEdit.length > 0) {
+			notEditList = Arrays.<Component> asList(notEdit);
+		} else {
+			notEditList = new ArrayList<Component>();
+		}
+
+		Component[] comps = c.getComponents();
+		for (Component comp : comps) {
+			if (!notEditList.contains(comp)) {
+				if (comp instanceof Container)
+					setEnabled((Container) comp, wasEnabled, notEdit);
+				if (wasEnabled.containsKey(comp))
+					comp.setEnabled(wasEnabled.get(comp));
+			}
+		}
+	}
+
+	public static void disableFrame() {
+		setDisabled(frame, wasEnabled,
+				new Component[] { reOpen, cancel, close });
+	}
+
+	public static void enableFrame() {
+		setEnabled(frame, wasEnabled, new Component[] { reOpen, cancel, close });
 	}
 }

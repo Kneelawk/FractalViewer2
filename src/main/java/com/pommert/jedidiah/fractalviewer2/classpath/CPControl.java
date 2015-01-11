@@ -8,8 +8,9 @@ import java.lang.reflect.Field;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.pommert.jedidiah.fractalviewer2.location.LocationRef;
+
 public class CPControl {
-	public static File parent;
 	public static Logger log;
 
 	public static void init() {
@@ -27,19 +28,12 @@ public class CPControl {
 	}
 
 	public static void addRelativeDir(String dirname) throws IOException {
-		updateParent();
-		File file = new File(parent, "natives");
+		File file = new File(LocationRef.PROGRAM_LOCATION_PARENT_STRING,
+				dirname);
 		if (!file.exists())
 			throw new FileNotFoundException(file.getAbsolutePath()
 					+ " does not exist!");
 		addLibraryDir(file.getPath());
-	}
-
-	public static void updateParent() {
-		if (parent == null) {
-			parent = new File(CPControl.class.getProtectionDomain()
-					.getCodeSource().getLocation().getPath()).getParentFile();
-		}
 	}
 
 	public static void addLibraryDir(String s) throws IOException {

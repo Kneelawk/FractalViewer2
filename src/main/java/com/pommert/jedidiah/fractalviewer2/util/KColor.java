@@ -1,26 +1,26 @@
 package com.pommert.jedidiah.fractalviewer2.util;
 
-public class Colour {
+public class KColor {
 	
 	public static final int BYTES_PER_PIXEL = 4;
 	public static final int BYTES_PER_COLOR = 1;
 
 	public int value = 0;
 
-	public Colour(int red, int green, int blue, int alpha) {
+	public KColor(int red, int green, int blue, int alpha) {
 		value = ((alpha & 0xFF) << 24) | ((red & 0xFF) << 16)
 				| ((green & 0xFF) << 8) | (blue & 0xFF);
 	}
 
-	public Colour(int red, int green, int blue) {
+	public KColor(int red, int green, int blue) {
 		this(red, green, blue, 255);
 	}
 
-	public Colour(int grey, int alpha) {
+	public KColor(int grey, int alpha) {
 		this(grey, grey, grey, alpha);
 	}
 
-	public Colour(int grey) {
+	public KColor(int grey) {
 		this(grey, 255);
 	}
 
@@ -40,7 +40,7 @@ public class Colour {
 		return (byte) ((value >> 24) & 0xFF);
 	}
 
-	public static Colour fromHSB(double hue, double saturation, double brightness) {
+	public static KColor fromHSB(double hue, double saturation, double brightness) {
 		int r = 0, g = 0, b = 0;
 		if (saturation == 0) {
 			r = g = b = (int) (brightness * 255.0 + 0.5);
@@ -83,6 +83,6 @@ public class Colour {
 				break;
 			}
 		}
-		return new Colour(r, g, b);
+		return new KColor(r, g, b);
 	}
 }

@@ -23,11 +23,12 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.pommert.jedidiah.fractalviewer2.fractal.AbstractFractal;
+import com.pommert.jedidiah.fractalviewer2.fractal.FractalStartFailedException;
 import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
 import com.pommert.jedidiah.fractalviewer2.ui.util.DataChangeListener;
 import com.pommert.jedidiah.fractalviewer2.ui.util.DoubleTextFieldControl;
 import com.pommert.jedidiah.fractalviewer2.ui.util.IntTextFieldControl;
-import com.pommert.jedidiah.fractalviewer2.util.Colour;
+import com.pommert.jedidiah.fractalviewer2.util.KColor;
 
 public class Mandelbrot1Fractal extends AbstractFractal {
 
@@ -433,7 +434,7 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 	}
 
 	@Override
-	public void starting(int seed) {
+	public void starting(int seed) throws FractalStartFailedException {
 		this.seed = seed;
 
 		planeCenterX = planeCenterXField.data;
@@ -526,7 +527,7 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 	}
 
 	@Override
-	public Colour getPixel(int pixelX, int pixelY) {
+	public KColor getPixel(int pixelX, int pixelY) {
 		double x = (((double) pixelX) / ((double) UIControl.getFractalWidth()))
 				* planeWidth + planeMinX;
 		double y = (((double) pixelY) / ((double) UIControl.getFractalHeight()))
@@ -559,28 +560,28 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 						|| (y <= boxMinY && boxMinY < ny && boxMinX <= x && x <= boxMaxX)
 						|| (x <= boxMaxX && boxMaxX < nx && boxMinY <= y && y <= boxMaxY) || (x <= boxMinX
 						&& boxMinX < nx && boxMinY <= y && y <= boxMaxY))) {
-			return new Colour(255);
+			return new KColor(255);
 		} else if (crossHairs && ((x <= 0 && 0 < nx) || (y <= 0 && 0 < ny))) {
-			return new Colour(255, 0, 0);
+			return new KColor(255, 0, 0);
 		} else if (n >= mits) {
-			return new Colour(0);
+			return new KColor(0);
 		} else {
 			if (colorScheme.equals("Segment")) {
 				// segment color scheme
-				return new Colour((((n * 18) >> 0) % 0xF) * 16,
+				return new KColor((((n * 18) >> 0) % 0xF) * 16,
 						(((n * 18) >> 4) % 0xF) * 16,
 						(((n * 18) >> 8) % 0xF) * 16);
 			} else if (colorScheme.equals("Striped")) {
 				// striped color scheme
-				return new Colour((n * 16 % 256), (int) a, (int) b);
+				return new KColor((n * 16 % 256), (int) a, (int) b);
 			} else if (colorScheme.equals("Random")) {
 				// random color scheme
 				rng.setSeed(n + randomOffset);
-				return new Colour(rng.nextInt(222), rng.nextInt(222),
+				return new KColor(rng.nextInt(222), rng.nextInt(222),
 						rng.nextInt(222));
 			} else {
 				// hue color scheme
-				return Colour.fromHSB((n * hueMultiplier % 256f) / 256f, 1.0f,
+				return KColor.fromHSB((n * hueMultiplier % 256f) / 256f, 1.0f,
 						(n * brightnessMultiplier % 256f) / 256f);
 			}
 		}
@@ -595,6 +596,11 @@ public class Mandelbrot1Fractal extends AbstractFractal {
 
 	@Override
 	public void finish() {
+		// Nothing to do here
+	}
 
+	@Override
+	public void destroy() {
+		// Nothing to do here
 	}
 }

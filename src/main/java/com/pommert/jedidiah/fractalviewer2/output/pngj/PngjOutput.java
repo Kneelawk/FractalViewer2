@@ -2,16 +2,21 @@ package com.pommert.jedidiah.fractalviewer2.output.pngj;
 
 import java.io.File;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
 import ar.com.hjg.pngj.IImageLine;
 import ar.com.hjg.pngj.ImageInfo;
 import ar.com.hjg.pngj.ImageLineInt;
 import ar.com.hjg.pngj.PngWriter;
+import ar.com.hjg.pngj.PngjOutputException;
 
 import com.pommert.jedidiah.fractalviewer2.output.ActiveOutput;
-import com.pommert.jedidiah.fractalviewer2.util.Colour;
+import com.pommert.jedidiah.fractalviewer2.util.KColor;
 
 public class PngjOutput extends ActiveOutput {
 
+	public Logger log;
 	public ImageInfo info;
 	public PngWriter writer;
 
@@ -20,7 +25,8 @@ public class PngjOutput extends ActiveOutput {
 
 	@Override
 	public void init() {
-		// nothing happens here
+		log = LogManager.getLogger("PngjOutput");
+		log.info("Init PngjOutput");
 	}
 
 	@Override
@@ -36,7 +42,7 @@ public class PngjOutput extends ActiveOutput {
 		for (int y = 0; y < info.rows && running; y++) {
 			int[] raw = new int[info.cols * 4];
 			for (int x = 0; x < info.cols && running; x++) {
-				Colour pixel = generatePixel(x, y);
+				KColor pixel = generatePixel(x, y);
 				if (pixel == null)
 					continue;
 				raw[x * 4] = pixel.getRed();
@@ -46,7 +52,9 @@ public class PngjOutput extends ActiveOutput {
 
 				// calculate percent done
 				double currentPixel = (y * info.cols) + x;
-				percentDone = (currentPixel * 100.0) / (info.rows * info.cols);
+				if (running)
+					percentDone = (currentPixel * 100.0)
+							/ (info.rows * info.cols);
 
 				// update output for things like garbage collection and
 				// percentage updates
@@ -56,7 +64,8 @@ public class PngjOutput extends ActiveOutput {
 			writer.writeRow(line, y);
 		}
 
-		percentDone = 100;
+		if (running)
+			percentDone = 100;
 
 		running = false;
 	}
@@ -68,9 +77,13 @@ public class PngjOutput extends ActiveOutput {
 
 	@Override
 	public void save(boolean stopping) {
-		writer.end();
-		writer.close();
-		
+		try {
+			writer.end();
+			writer.close();
+		} catch (PngjOutputException poe) {
+			log.warn("Pngj complains: ", poe);
+		}
+
 		writer = null;
 		info = null;
 	}

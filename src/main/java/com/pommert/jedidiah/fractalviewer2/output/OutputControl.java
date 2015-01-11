@@ -1,21 +1,27 @@
 package com.pommert.jedidiah.fractalviewer2.output;
 
+import java.awt.HeadlessException;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
+
+import javax.swing.JOptionPane;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.pommert.jedidiah.fractalviewer2.fractal.FractalControl;
+import com.pommert.jedidiah.fractalviewer2.fractal.FractalStartFailedException;
 import com.pommert.jedidiah.fractalviewer2.output.lwjgl.LWJGLOutput;
 import com.pommert.jedidiah.fractalviewer2.output.pngj.PngjOutput;
 import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
-import com.pommert.jedidiah.fractalviewer2.util.Colour;
+import com.pommert.jedidiah.fractalviewer2.util.KColor;
 
 public class OutputControl {
 	public static ArrayList<ActiveOutput> activeOutputs = new ArrayList<ActiveOutput>();
 	public static ArrayList<PassiveOutput> passiveOutputs = new ArrayList<PassiveOutput>();
 	public static boolean running = false;
+	public static boolean stopping = false;
 	public static int currentActiveIndex = 0;
 	public static String currentFractalGeneratorName;
 	public static Thread generationThread;
@@ -54,70 +60,164 @@ public class OutputControl {
 		initPassiveOutputs();
 	}
 
-	public static synchronized void start(File file, String fractalGeneratorName, int width,
-			int height) {
+	public static synchronized void start(String fractalGeneratorName,
+			int width, int height, int seed, String outputDirName,
+			String outputName) {
 		if (!running) {
 			running = true;
 			generationThread = new Thread(new Runnable() {
 				@Override
 				public void run() {
-					_start(file, fractalGeneratorName, width, height);
+					_start(fractalGeneratorName, width, height, seed,
+							outputDirName, outputName);
 				}
 			}, "Generation Thread");
 			generationThread.start();
 		}
 	}
 
-	protected static void _start(File file, String fractalGeneratorName,
-			int width, int height) {
-		resetUpdates();
-		if (!file.getParentFile().exists())
-			file.getParentFile().mkdirs();
+	protected static void _start(String fractalGeneratorName, int width,
+			int height, int seed, String outputDirName, String outputName) {
+		try {
+			File file = setupFile(fractalGeneratorName, seed, outputDirName,
+					width, height, outputName);
 
-		log.info("Setting Up Outputs");
-		for (ActiveOutput out : activeOutputs) {
-			out.setup(file, width, height);
+			resetUpdates();
+
+			UIControl.updateCancelButton(running);
+
+			if (!file.getParentFile().exists())
+				file.getParentFile().mkdirs();
+
+			log.info("Setting Up Outputs");
+			for (ActiveOutput out : activeOutputs) {
+				out.setup(file, width, height);
+			}
+			for (PassiveOutput out : passiveOutputs) {
+				out.setup(file, width, height);
+			}
+
+			currentFractalGeneratorName = fractalGeneratorName;
+
+			log.info("Setting Up Fractal Generator");
+
+			log.info("Starting Fractal Generation");
+			overallDone = 0;
+			int maxOutput = activeOutputs.size();
+			for (currentActiveIndex = 0; currentActiveIndex < maxOutput
+					&& !stopping; currentActiveIndex++) {
+				ActiveOutput out = activeOutputs.get(currentActiveIndex);
+				out.run();
+				out.save(stopping);
+				if (!stopping)
+					overallDone = ((double) currentActiveIndex * 100)
+							/ maxOutput;
+			}
+
+			currentActiveIndex = 0;
+
+			for (PassiveOutput out : passiveOutputs) {
+				out.save();
+			}
+
+			if (!stopping)
+				overallDone = 100;
+
+			FractalControl.finish(fractalGeneratorName);
+
+			updatePercentDone();
+			collectGarbage();
+
+			if (stopping)
+				log.info("Stopping Incomplete Fractal Generation!");
+			else
+				log.info("Finished Fractal Generation!");
+
+		} catch (GenerationFailedException e) {
+		} finally {
+			UIControl.enableFrame();
+
+			running = false;
+
+			UIControl.updateCancelButton(running);
+
+			stopping = false;
 		}
-		for (PassiveOutput out : passiveOutputs) {
-			out.setup(file, width, height);
+	}
+
+	private static File setupFile(String fractalGenName, int seed,
+			String outputDirName, int imageWidth, int imageHeight,
+			String outputName) {
+		try {
+			FractalControl.starting(fractalGenName, seed);
+		} catch (FractalStartFailedException fsfe) {
+			log.error("Error starting fractal generator: " + fractalGenName,
+					fsfe);
+			JOptionPane.showMessageDialog(UIControl.getFrame(),
+					"Error starting fractal generator:\n" + fsfe.toString(),
+					"Error starting fractal generator!",
+					JOptionPane.ERROR_MESSAGE);
+			throw new GenerationFailedException(fsfe);
 		}
 
-		currentFractalGeneratorName = fractalGeneratorName;
+		File outputDir = new File(outputDirName).getAbsoluteFile();
+		String outputFileName = outputName
+				+ (outputName.length() > 0 ? "_" : "")
+				+ FractalControl.getFileName(fractalGenName) + "_" + imageWidth
+				+ "x" + imageHeight + ".png";
+		File outputFile = new File(outputDir, outputFileName);
+		if (outputFile.exists()) {
+			int num = 1;
+			outputFileName = outputName + (outputName.length() > 0 ? "_" : "")
+					+ "#" + num + "_"
+					+ FractalControl.getFileName(fractalGenName) + "_"
+					+ imageWidth + "x" + imageHeight + ".png";
+			File newOutputFile = new File(outputDir, outputFileName);
 
-		log.info("Setting Up Fractal Generator");
+			while (newOutputFile.exists()) {
+				num++;
+				outputFileName = outputName
+						+ (outputName.length() > 0 ? "_" : "") + "#" + num
+						+ "_" + FractalControl.getFileName(fractalGenName)
+						+ "_" + imageWidth + "x" + imageHeight + ".png";
+				newOutputFile = new File(outputDir, outputFileName);
+			}
 
-		log.info("Starting Fractal Generation");
-		overallDone = 0;
-		int maxOutput = activeOutputs.size();
-		for (currentActiveIndex = 0; currentActiveIndex < maxOutput && running; currentActiveIndex++) {
-			ActiveOutput out = activeOutputs.get(currentActiveIndex);
-			out.run();
-			out.save(!running);
-			overallDone = ((double) currentActiveIndex * 100) / maxOutput;
+			int result = JOptionPane.CANCEL_OPTION;
+			try {
+				result = JOptionPane
+						.showOptionDialog(
+								UIControl.getFrame(),
+								"Are you sure you want to override existing file:\n"
+										+ outputFile.getCanonicalPath()
+										+ "\nor do you just want to use the new file:\n"
+										+ newOutputFile.getCanonicalPath(),
+								"Override existing file?",
+								JOptionPane.YES_NO_CANCEL_OPTION,
+								JOptionPane.WARNING_MESSAGE, null,
+								new Object[] { "Override Existing File",
+										"Use New File", "Cancel" },
+								"Use New File");
+			} catch (HeadlessException e1) {
+				e1.printStackTrace();
+			} catch (IOException e1) {
+				e1.printStackTrace();
+			}
+
+			if (result == JOptionPane.CANCEL_OPTION)
+				throw new GenerationFailedException("Generation Canceled");
+			else if (result == JOptionPane.NO_OPTION)
+				outputFile = newOutputFile;
 		}
-
-		currentActiveIndex = 0;
-
-		for (PassiveOutput out : passiveOutputs) {
-			out.save();
-		}
-
-		overallDone = 100;
-
-		updatePercentDone();
-		collectGarbage();
-
-		log.info("Finished Fractal Generation!");
-
-		running = false;
+		return outputFile;
 	}
 
 	public static void resetUpdates() {
 		updates = 0;
 	}
 
-	public static Colour generatePixel(int x, int y) {
-		Colour c = FractalControl.generatePixel(currentFractalGeneratorName, x,
+	public static KColor generatePixel(int x, int y) {
+		KColor c = FractalControl.generatePixel(currentFractalGeneratorName, x,
 				y);
 		for (PassiveOutput out : passiveOutputs) {
 			out.setPixel(x, y, c);
@@ -151,6 +251,7 @@ public class OutputControl {
 
 	public static void stop() {
 		if (running) {
+			stopping = true;
 			ActiveOutput out = activeOutputs.get(currentActiveIndex);
 			out.stop();
 		}

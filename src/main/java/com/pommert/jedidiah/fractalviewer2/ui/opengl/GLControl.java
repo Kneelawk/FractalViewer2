@@ -14,7 +14,7 @@ import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 
 import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
-import com.pommert.jedidiah.fractalviewer2.util.Colour;
+import com.pommert.jedidiah.fractalviewer2.util.KColor;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 
@@ -34,7 +34,6 @@ public class GLControl {
 	public static int imageX, imageY;
 	public static int imageWidth, imageHeight;
 	public static String displayTitle = "Fractal Viewer";
-	public static boolean shouldClose = false;
 	public static ImageInfo background;
 
 	public static boolean glInteractionEnabled = true;
@@ -108,20 +107,26 @@ public class GLControl {
 	}
 
 	public static synchronized void reCreateThread() {
-		glThread = new Thread(new Runnable() {
-			public void run() {
-				startGL();
-			}
-		}, "GL Render Thread");
+		glThread = new Thread(() -> startGL(), "GL Render Thread");
 	}
 
 	public static synchronized void open(String title, int width, int height) {
 		if (!glInteractionEnabled)
 			return;
-		imageWidth = width;
-		imageHeight = height;
+		if (width * height > imageWidth * imageHeight) {
+			pixels = createImageBuffer(width, height);
+
+			imageWidth = width;
+			imageHeight = height;
+		} else {
+			imageWidth = width;
+			imageHeight = height;
+
+			pixels = createImageBuffer(width, height);
+		}
 		displayTitle = title;
 		setupConstants();
+
 		if (!isOpen) {
 			reCreateThread();
 			isOpen = true;
@@ -146,14 +151,12 @@ public class GLControl {
 	public static synchronized void setupConstants() {
 		imageX = (DISPLAY_WIDTH - imageWidth) / 2;
 		imageY = (DISPLAY_HEIGHT - imageHeight) / 2;
-
-		pixels = createImageBuffer(imageWidth, imageHeight);
 	}
 
 	public static synchronized ByteBuffer createImageBuffer(int width,
 			int height) {
 		ByteBuffer buf = BufferUtils.createByteBuffer(width * height
-				* Colour.BYTES_PER_PIXEL);
+				* KColor.BYTES_PER_PIXEL);
 		// Apparently there is no more setup needed
 
 		return buf;
@@ -229,7 +232,7 @@ public class GLControl {
 	public static void startLoop() {
 		while (isOpen) {
 			if (Display.isCloseRequested()) {
-				stop(false);
+				stop();
 			}
 
 			pullInput();
@@ -244,7 +247,7 @@ public class GLControl {
 	public static void pullInput() {
 		if (Keyboard.isKeyDown(Keyboard.KEY_UP) && imageY < EXTRA_Y) {
 			if (imageY + 5 > EXTRA_Y)
-				imageY += Math.max(EXTRA_X - imageX, 0);
+				imageY += Math.max(EXTRA_Y - imageY, 0);
 			else
 				imageY += 5;
 		}
@@ -253,7 +256,7 @@ public class GLControl {
 				&& imageY + imageHeight > DISPLAY_HEIGHT - EXTRA_Y) {
 			if (imageY + imageHeight - 5 < DISPLAY_HEIGHT - EXTRA_Y)
 				imageY += Math.min((DISPLAY_HEIGHT - EXTRA_Y)
-						- (imageX + imageWidth), 0);
+						- (imageY + imageHeight), 0);
 			else
 				imageY -= 5;
 		}
@@ -366,7 +369,7 @@ public class GLControl {
 		GL11.glEnd();
 	}
 
-	public static void setPixel(int x, int y, Colour color) {
+	public static void setPixel(int x, int y, KColor color) {
 		if (!glInteractionEnabled)
 			return;
 
@@ -377,17 +380,12 @@ public class GLControl {
 		pixels.put(index + 3, color.getAlpha());
 	}
 
-	public static void stop(boolean closing) {
+	public static void stop() {
 		isOpen = false;
-		shouldClose = closing;
 	}
 
 	public static void destroy() {
 		isOpen = false;
 		Display.destroy();
-		if (shouldClose) {
-			log.info("Exiting.");
-			System.exit(0);
-		}
 	}
 }

@@ -7,8 +7,9 @@ import javax.swing.JPanel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import com.pommert.jedidiah.fractalviewer2.fractal.customjs.CustomJsFractal;
 import com.pommert.jedidiah.fractalviewer2.fractal.mandelbrot1.Mandelbrot1Fractal;
-import com.pommert.jedidiah.fractalviewer2.util.Colour;
+import com.pommert.jedidiah.fractalviewer2.util.KColor;
 
 public class FractalControl {
 
@@ -24,6 +25,11 @@ public class FractalControl {
 
 		// add fractals
 		addFractal(new Mandelbrot1Fractal());
+		addFractal(new CustomJsFractal());
+	}
+
+	public static void destroyFractals() {
+		fractals.forEach((String s, AbstractFractal f) -> f.destroy());
 	}
 
 	private static void addFractal(AbstractFractal fract) {
@@ -31,7 +37,8 @@ public class FractalControl {
 		fractals.put(fract.getName(), fract);
 	}
 
-	public static void starting(String name, int seed) {
+	public static void starting(String name, int seed)
+			throws FractalStartFailedException {
 		getFractal(name).starting(seed);
 	}
 
@@ -39,8 +46,13 @@ public class FractalControl {
 		return getFractal(name).getFileName();
 	}
 
-	public static Colour generatePixel(String name, int x, int y) {
-		return getFractal(name).getPixel(x, y);
+	public static KColor generatePixel(String name, int x, int y) {
+		KColor c = getFractal(name).getPixel(x, y);
+		return (c != null ? c : new KColor(0, 0));
+	}
+
+	public static void finish(String name) {
+		getFractal(name).finish();
 	}
 
 	public static String[] list() {

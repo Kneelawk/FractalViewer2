@@ -4,7 +4,7 @@ import java.io.File;
 
 import com.pommert.jedidiah.fractalviewer2.output.PassiveOutput;
 import com.pommert.jedidiah.fractalviewer2.ui.opengl.GLControl;
-import com.pommert.jedidiah.fractalviewer2.util.Colour;
+import com.pommert.jedidiah.fractalviewer2.util.KColor;
 
 public class LWJGLOutput extends PassiveOutput {
 
@@ -21,7 +21,7 @@ public class LWJGLOutput extends PassiveOutput {
 	}
 
 	@Override
-	public void setPixel(int x, int y, Colour color) {
+	public void setPixel(int x, int y, KColor color) {
 		if (!GLControl.glInteractionEnabled)
 			return;
 		GLControl.setPixel(x, y, color);
