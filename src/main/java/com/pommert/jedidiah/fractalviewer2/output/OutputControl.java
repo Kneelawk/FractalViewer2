@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import com.pommert.jedidiah.fractalviewer2.fractal.FractalControl;
-import com.pommert.jedidiah.fractalviewer2.fractal.FractalStartFailedException;
 import com.pommert.jedidiah.fractalviewer2.output.lwjgl.LWJGLOutput;
 import com.pommert.jedidiah.fractalviewer2.output.pngj.PngjOutput;
 import com.pommert.jedidiah.fractalviewer2.ui.UIControl;
@@ -134,6 +133,11 @@ public class OutputControl {
 				log.info("Finished Fractal Generation!");
 
 		} catch (GenerationFailedException e) {
+			log.error("Error during fractal generation!", e);
+			JOptionPane.showMessageDialog(UIControl.getFrame(),
+					"Error during fractal generation:\n" + e.toString(),
+					"Error during fractal generation!",
+					JOptionPane.ERROR_MESSAGE);
 		} finally {
 			UIControl.enableFrame();
 
@@ -150,14 +154,9 @@ public class OutputControl {
 			String outputName) {
 		try {
 			FractalControl.starting(fractalGenName, seed);
-		} catch (FractalStartFailedException fsfe) {
-			log.error("Error starting fractal generator: " + fractalGenName,
-					fsfe);
-			JOptionPane.showMessageDialog(UIControl.getFrame(),
-					"Error starting fractal generator:\n" + fsfe.toString(),
-					"Error starting fractal generator!",
-					JOptionPane.ERROR_MESSAGE);
-			throw new GenerationFailedException(fsfe);
+		} catch (Throwable t) {
+			throw new GenerationFailedException(
+					"Error starting fractal generator: " + fractalGenName, t);
 		}
 
 		File outputDir = new File(outputDirName).getAbsoluteFile();
@@ -217,12 +216,17 @@ public class OutputControl {
 	}
 
 	public static KColor generatePixel(int x, int y) {
-		KColor c = FractalControl.generatePixel(currentFractalGeneratorName, x,
-				y);
-		for (PassiveOutput out : passiveOutputs) {
-			out.setPixel(x, y, c);
+		KColor c = null;
+		try {
+			c = FractalControl.generatePixel(currentFractalGeneratorName, x, y);
+			for (PassiveOutput out : passiveOutputs) {
+				out.setPixel(x, y, c);
+			}
+		} catch (Throwable t) {
+			throw new GenerationFailedException(
+					"Error during pixel generation: " + t.toString(), t);
 		}
-		return c;
+		return c == null ? new KColor(0, 0) : c;
 	}
 
 	public static void update() {
